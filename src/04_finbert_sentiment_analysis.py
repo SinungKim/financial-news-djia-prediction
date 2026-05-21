@@ -178,24 +178,26 @@ def run_finbert(sentiment_pipeline, texts: List[str], batch_size: int = 16) -> p
 
 def aggregate_daily(scored_df: pd.DataFrame) -> pd.DataFrame:
     """Aggregate headline-level FinBERT scores into daily metrics."""
-    grouped = scored_df.groupby("Date")
 
-    daily = grouped.agg(
-        pos_mean=("positive", "mean"),
-        pos_median=("positive", "median"),
-        neu_mean=("neutral", "mean"),
-        neu_median=("neutral", "median"),
-        neg_mean=("negative", "mean"),
-        neg_median=("negative", "median"),
-        headline_count=("headline", "count")
-    ).reset_index()
+    daily = (
+        scored_df
+        .groupby("Date")
+        .agg(
+            pos_mean=("positive", "mean"),
+            pos_median=("positive", "median"),
+            neu_mean=("neutral", "mean"),
+            neu_median=("neutral", "median"),
+            neg_mean=("negative", "mean"),
+            neg_median=("negative", "median"),
+            headline_count=("headline", "count")
+        )
+        .reset_index()
+    )
 
     pred_dist = (
         scored_df
         .groupby(["Date", "label_pred"])
         .size()
-        .groupby(level=0)
-        .apply(lambda x: x / x.sum())
         .unstack(fill_value=0)
         .reset_index()
     )
@@ -216,8 +218,8 @@ def aggregate_daily(scored_df: pd.DataFrame) -> pd.DataFrame:
         how="left"
     )
 
-    label_df = scored_df[["Date", "Label"]].drop_duplicates()
     if "Label" in scored_df.columns:
+        label_df = scored_df[["Date", "Label"]].drop_duplicates()
         daily = daily.merge(label_df, on="Date", how="left")
 
     return daily
