@@ -137,8 +137,9 @@ def build_finbert_pipeline(model_name: str = MODEL_NAME):
         model=model,
         tokenizer=tokenizer,
         device=device,
-        return_all_scores=True,
-        truncation=True
+        top_k=None,
+        truncation=True,
+        max_length=512
     )
 
     return sentiment_pipeline
@@ -150,7 +151,11 @@ def run_finbert(sentiment_pipeline, texts: List[str], batch_size: int = 16) -> p
 
     for start_idx in tqdm(range(0, len(texts), batch_size), desc="FinBERT inference"):
         batch = texts[start_idx:start_idx + batch_size]
-        outputs = sentiment_pipeline(batch)
+        outputs = sentiment_pipeline(
+            batch,
+            truncation=True,
+            max_length=512
+        )
 
         for output in outputs:
             prob = {item["label"].lower(): float(item["score"]) for item in output}
